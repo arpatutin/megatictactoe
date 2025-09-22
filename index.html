@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mega Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 90vw;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .rules {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .turn-indicator {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #555;
+            font-weight: bold;
+        }
+        
+        .active-board-info {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            min-height: 20px;
+        }
+        
+        .mega-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: min(90vw, 600px);
+            height: min(90vw, 600px);
+            margin: 0 auto 20px;
+            background-color: #2c3e50;
+            border-radius: 10px;
+            padding: 8px;
+        }
+        
+        .sub-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            background-color: #34495e;
+            border-radius: 5px;
+            padding: 2px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .sub-board.active {
+            background-color: #e74c3c;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+        
+        .sub-board.won {
+            background-color: #27ae60;
+        }
+        
+        .sub-board.tied {
+            background-color: #f39c12;
+        }
+        
+        .sub-board.disabled {
+            opacity: 0.5;
+        }
+        
+        .cell {
+            background-color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: min(4vw, 24px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: min(12vw, 60px);
+        }
+        
+        .cell:hover:not(:disabled) {
+            background-color: #ecf0f1;
+            transform: scale(1.1);
+        }
+        
+        .cell:disabled {
+            cursor: not-allowed;
+        }
+        
+        .cell.x {
+            color: #e74c3c;
+        }
+        
+        .cell.o {
+            color: #3498db;
+        }
+        
+        .sub-board-winner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: min(8vw, 80px);
+            font-weight: bold;
+            z-index: 10;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        
+        .sub-board-winner.x {
+            color: #e74c3c;
+        }
+        
+        .sub-board-winner.o {
+            color: #3498db;
+        }
+        
+        .sub-board-winner.tie {
+            color: #f39c12;
+            font-size: min(6vw, 60px);
+        }
+        
+        .reset-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        .reset-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .game-status {
+            font-size: 18px;
+            margin: 15px 0;
+            font-weight: bold;
+            min-height: 22px;
+        }
+        
+        .winner {
+            color: #27ae60;
+        }
+        
+        .tie {
+            color: #f39c12;
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .rules {
+                font-size: 12px;
+            }
+            
+            .turn-indicator {
+                font-size: 18px;
+            }
+            
+            .mega-board {
+                gap: 6px;
+                padding: 6px;
+            }
+            
+            .sub-board {
+                gap: 1px;
+                padding: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Mega Tic Tac Toe</h1>
+        <div class="rules">
+            Ultimate Tic-Tac-Toe: Win small boards to claim them, then win the big board! 
+            <br>Your move determines which small board your opponent must play in next.
+        </div>
+        <div class="turn-indicator" id="turnIndicator">Player X's Turn</div>
+        <div class="active-board-info" id="activeBoardInfo">Click any cell to start</div>
+        
+        <div class="mega-board" id="megaBoard">
+            <!-- Sub-boards will be generated by JavaScript -->
+        </div>
+        
+        <div class="game-status" id="gameStatus"></div>
+        <button class="reset-btn" id="resetBtn">New Game</button>
+    </div>
+
+    <script>
+        class MegaTicTacToe {
+            constructor() {
+                // 9 sub-boards, each with 9 cells
+                this.subBoards = Array(9).fill(null).map(() => Array(9).fill(''));
+                this.subBoardWinners = Array(9).fill(''); // '', 'X', 'O', or 'T' (tie)
+                this.currentPlayer = 'X';
+                this.activeBoard = -1; // -1 means any board, 0-8 means specific board
+                this.gameActive = true;
+                this.megaBoardWinner = '';
+                
+                this.megaBoardElement = document.getElementById('megaBoard');
+                this.turnIndicator = document.getElementById('turnIndicator');
+                this.activeBoardInfo = document.getElementById('activeBoardInfo');
+                this.gameStatus = document.getElementById('gameStatus');
+                this.resetBtn = document.getElementById('resetBtn');
+                
+                this.initializeGame();
+            }
+            
+            initializeGame() {
+                this.createBoard();
+                this.resetBtn.addEventListener('click', () => this.resetGame());
+                this.updateDisplay();
+            }
+            
+            createBoard() {
+                this.megaBoardElement.innerHTML = '';
+                
+                for (let boardIndex = 0; boardIndex < 9; boardIndex++) {
+                    const subBoard = document.createElement('div');
+                    subBoard.className = 'sub-board';
+                    subBoard.dataset.boardIndex = boardIndex;
+                    
+                    for (let cellIndex = 0; cellIndex < 9; cellIndex++) {
+                        const cell = document.createElement('button');
+                        cell.className = 'cell';
+                        cell.dataset.boardIndex = boardIndex;
+                        cell.dataset.cellIndex = cellIndex;
+                        cell.addEventListener('click', () => this.handleCellClick(boardIndex, cellIndex));
+                        subBoard.appendChild(cell);
+                    }
+                    
+                    this.megaBoardElement.appendChild(subBoard);
+                }
+            }
+            
+            handleCellClick(boardIndex, cellIndex) {
+                // Check if move is valid
+                if (!this.gameActive) return;
+                if (this.subBoards[boardIndex][cellIndex] !== '') return;
+                if (this.subBoardWinners[boardIndex] !== '') return;
+                if (this.activeBoard !== -1 && this.activeBoard !== boardIndex) return;
+                
+                // Make the move
+                this.subBoards[boardIndex][cellIndex] = this.currentPlayer;
+                
+                // Update the cell display
+                const cell = document.querySelector(`[data-board-index="${boardIndex}"][data-cell-index="${cellIndex}"]`);
+                cell.textContent = this.currentPlayer;
+                cell.classList.add(this.currentPlayer.toLowerCase());
+                cell.disabled = true;
+                
+                // Check if this sub-board is won
+                const subBoardResult = this.checkSubBoardWinner(boardIndex);
+                if (subBoardResult) {
+                    this.subBoardWinners[boardIndex] = subBoardResult;
+                    this.markSubBoardComplete(boardIndex, subBoardResult);
+                }
+                
+                // Check if the mega board is won
+                const megaWinner = this.checkMegaBoardWinner();
+                if (megaWinner) {
+                    this.gameActive = false;
+                    this.megaBoardWinner = megaWinner;
+                    if (megaWinner === 'T') {
+                        this.gameStatus.textContent = "Mega Tie! 🤝";
+                        this.gameStatus.classList.add('tie');
+                    } else {
+                        this.gameStatus.textContent = `Player ${megaWinner} Wins the Mega Game! 🎉`;
+                        this.gameStatus.classList.add('winner');
+                    }
+                    this.turnIndicator.textContent = 'Game Over';
+                    this.activeBoardInfo.textContent = '';
+                    return;
+                }
+                
+                // Determine next active board
+                if (this.subBoardWinners[cellIndex] === '') {
+                    this.activeBoard = cellIndex;
+                } else {
+                    this.activeBoard = -1; // Can play anywhere
+                }
+                
+                // Switch players
+                this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+                this.updateDisplay();
+            }
+            
+            checkSubBoardWinner(boardIndex) {
+                const board = this.subBoards[boardIndex];
+                const winningCombinations = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                    [0, 4, 8], [2, 4, 6] // diagonals
+                ];
+                
+                for (const combination of winningCombinations) {
+                    const [a, b, c] = combination;
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        return board[a];
+                    }
+                }
+                
+                // Check for tie
+                if (board.every(cell => cell !== '')) {
+                    return 'T';
+                }
+                
+                return '';
+            }
+            
+            checkMegaBoardWinner() {
+                const board = this.subBoardWinners;
+                const winningCombinations = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                    [0, 4, 8], [2, 4, 6] // diagonals
+                ];
+                
+                for (const combination of winningCombinations) {
+                    const [a, b, c] = combination;
+                    if (board[a] && board[a] !== 'T' && board[a] === board[b] && board[a] === board[c]) {
+                        return board[a];
+                    }
+                }
+                
+                // Check for mega tie (all sub-boards completed)
+                if (board.every(result => result !== '')) {
+                    return 'T';
+                }
+                
+                return '';
+            }
+            
+            markSubBoardComplete(boardIndex, winner) {
+                const subBoard = document.querySelector(`[data-board-index="${boardIndex}"]`);
+                const winnerDiv = document.createElement('div');
+                winnerDiv.className = `sub-board-winner ${winner.toLowerCase()}`;
+                winnerDiv.textContent = winner === 'T' ? 'TIE' : winner;
+                subBoard.appendChild(winnerDiv);
+                
+                if (winner === 'T') {
+                    subBoard.classList.add('tied');
+                } else {
+                    subBoard.classList.add('won');
+                }
+                
+                // Disable all cells in this sub-board
+                const cells = subBoard.querySelectorAll('.cell');
+                cells.forEach(cell => cell.disabled = true);
+            }
+            
+            updateDisplay() {
+                this.turnIndicator.textContent = `Player ${this.currentPlayer}'s Turn`;
+                
+                // Update active board highlighting
+                document.querySelectorAll('.sub-board').forEach((subBoard, index) => {
+                    subBoard.classList.remove('active');
+                    
+                    if (this.gameActive && this.subBoardWinners[index] === '') {
+                        if (this.activeBoard === -1 || this.activeBoard === index) {
+                            subBoard.classList.remove('disabled');
+                            if (this.activeBoard === index) {
+                                subBoard.classList.add('active');
+                            }
+                        } else {
+                            subBoard.classList.add('disabled');
+                        }
+                    } else if (this.gameActive) {
+                        subBoard.classList.add('disabled');
+                    }
+                });
+                
+                // Update active board info
+                if (this.gameActive) {
+                    if (this.activeBoard === -1) {
+                        this.activeBoardInfo.textContent = 'Play in any available board';
+                    } else {
+                        const boardNames = [
+                            'Top-Left', 'Top-Center', 'Top-Right',
+                            'Middle-Left', 'Middle-Center', 'Middle-Right',
+                            'Bottom-Left', 'Bottom-Center', 'Bottom-Right'
+                        ];
+                        this.activeBoardInfo.textContent = `Must play in: ${boardNames[this.activeBoard]}`;
+                    }
+                } else {
+                    this.activeBoardInfo.textContent = '';
+                }
+            }
+            
+            resetGame() {
+                this.subBoards = Array(9).fill(null).map(() => Array(9).fill(''));
+                this.subBoardWinners = Array(9).fill('');
+                this.currentPlayer = 'X';
+                this.activeBoard = -1;
+                this.gameActive = true;
+                this.megaBoardWinner = '';
+                
+                this.gameStatus.textContent = '';
+                this.gameStatus.classList.remove('winner', 'tie');
+                
+                // Reset all cells and sub-boards
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.textContent = '';
+                    cell.disabled = false;
+                    cell.classList.remove('x', 'o');
+                });
+                
+                document.querySelectorAll('.sub-board').forEach(subBoard => {
+                    subBoard.classList.remove('won', 'tied', 'active', 'disabled');
+                    const winner = subBoard.querySelector('.sub-board-winner');
+                    if (winner) winner.remove();
+                });
+                
+                this.updateDisplay();
+            }
+        }
+        
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MegaTicTacToe();
+        });
+    </script>
+</body>
+</html>
